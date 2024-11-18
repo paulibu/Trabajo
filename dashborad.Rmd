@@ -1,0 +1,515 @@
+---
+title: "Trabajo Final"
+output:
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+---
+MUESTRA DE DATA Y VARIABLE DEPENDIENTE
+=======================================================================
+
+Column {data-width=300}
+-----------------------------------------------------------------------
+### DATA
+```{r}
+# Cargar librerías
+library(tidyverse)
+
+# Importar los datos
+data <- read.csv("DATA PROVINCIAS_CHATA - Data.csv", stringsAsFactors = FALSE)
+
+# Limpiar y transformar variables numéricas
+data <- data %>%
+  mutate(across(c(PORC_GAN, POR_POB_ELEC, SERV_GAS, SERV_AGUA, EDUC_PBL, CP_MED, IND_CORR),
+                ~ as.numeric(gsub(",", ".", .)))) # Reemplazar comas y convertir a numérico
+```
+
+```{r}
+data <- data %>%
+  mutate(across(c(PORC_GAN, POR_POB_ELEC, SERV_GAS, SERV_AGUA, EDUC_PBL, CP_MED, IND_CORR),
+                ~ as.numeric(gsub(",", ".", .)))) %>%  # Reemplazar comas y convertir a numérico
+  mutate(MCR = as.factor(MCR))  # Asegurar que la macroregión es categórica
+```
+
+```{r}
+colnames(data)
+```
+```{r}
+colnames(data)[colnames(data) == "PORC_GAN "] <- "PORC_GAN"
+```
+
+```{r}
+table(data$MCR)
+```
+
+
+Column {data-width=700}
+-----------------------------------------------------------------------
+
+### VARIABLE DEPENDIENTE: PORCENTAJE CON EL QUE GANÓ PEDRO CASTILLO 
+
+```{r}
+data %>%                      ## Paso 1: DATA 
+  summarize(Promedio=mean(PORC_GAN),Mediana=median(PORC_GAN))  ## Paso 2: Resumir 
+```
+```{r}
+data %>%                      ## Paso 1: DATA 
+  group_by(MCR) %>%    ## Paso 2: group_by
+  summarize(Promedio=mean(PORC_GAN),Mediana=median(PORC_GAN)) ## Paso 2:summarize
+```
+
+### Histograma
+```{r}
+library(ggplot2)
+ggplot(data, aes(x=PORC_GAN)) + geom_histogram()
+```
+
+### Gráfico de bigotes
+```{r}
+library(ggplot2)
+ggplot(data, aes(x=MCR,y = PORC_GAN,fill=MCR)) + 
+  geom_boxplot()
+```
+
+### Comparación
+```{r}
+library(dplyr)
+data %>%
+  ggplot(aes(x = PORC_GAN, group = MCR)) +
+  geom_histogram() +
+  facet_wrap(~ MCR) +
+  labs(x = "Macroregiones", y = "porcentaje en que gano PEDRO CASTILLO")
+```
+
+
+
+REGRESION GAUSSIANA
+=======================================================================
+
+Column {data-width=500} 
+-----------------------------------------------------------------------
+
+### sin variables de control 
+```{r}
+modelo1 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA, data = data)
+summary(modelo1)
+```
+```{r}
+reg1=lm(modelo1,data=data)
+summary(reg1)
+```
+
+```{r}
+library(modelsummary)
+model1=list('apropiacion (I)'=reg1)
+modelsummary(model1, title = "Regresion: modelo 1",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo2 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL , data = data)
+summary(modelo2)
+```
+```{r}
+reg2=lm(modelo2,data=data)
+summary(reg2)
+```
+
+```{r}
+model2=list('apropiacion (II)'=reg2)
+modelsummary(model2, title = "Regresion: modelo 2",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo3 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED , data = data)
+summary(modelo3)
+```
+
+```{r}
+reg3=lm(modelo3,data=data)
+summary(reg3)
+```
+
+```{r}
+model3=list('apropiacion (III)'=reg3)
+modelsummary(model3, title = "Regresion: modelo 3",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo4 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED + IND_CORR , data = data)
+summary(modelo4)
+```
+
+```{r}
+reg4=lm(modelo4,data=data)
+summary(reg4)
+```
+
+```{r}
+model4=list('apropiacion (IV)'=reg4)
+modelsummary(model4, title = "Regresion: modelo 4",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)' = reg4)
+modelsummary(models, title = "Resultados de todos los modelos",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)'=reg4)
+modelsummary(models, title = "Resultados de todos los modelos",statistic = "conf.int",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+### Gráfico
+```{r}
+library(ggplot2)
+library(sjPlot)
+
+
+plot_models(reg1,reg2,reg3, reg4, vline.color = "black",m.labels=c("Modelo 1","Modelo 2","Modelo 3", "Modelo 4"),dot.size = 1,line.size = 0.6)
+```
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### con variables de control 
+
+```{r}
+modelo5_c <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED + IND_CORR + POR_POB_ELEC + MCR, data = data)
+summary(modelo5_c)
+```
+
+```{r}
+reg5=lm(modelo5_c,data=data)
+summary(reg5)
+```
+
+```{r}
+model5_c=list('apropiacion (V)'=reg5)
+modelsummary(model5_c, title = "Regresion: modelo 5 Control",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)' = reg4,
+            'apropiacion (V)' = reg5)
+modelsummary(models, title = "Resultados de todos los modelos",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)'=reg4,
+            'apropiacion (V)'=reg5)
+modelsummary(models, title = "Resultados de todos los modelos",statistic = "conf.int",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+library(magrittr)
+library(knitr)
+tanova=anova(reg1,reg2,reg3, reg4, reg5)
+
+kable(tanova,
+      caption = "Comparación de modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+```
+
+### Gráfico de los 5 modelos
+
+```{r}
+library(ggplot2)
+library(sjPlot)
+
+
+plot_models(reg1,reg2,reg3, reg4, reg5, vline.color = "black",m.labels=c("Modelo 1","Modelo 2","Modelo 3", "Modelo 4", "Modelo 5 Control"),dot.size = 1,line.size = 0.6)
+```
+
+
+-----------------------------------------------------------------------
+
+ANÁLISIS FACTORIAL
+=======================================================================
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### TABLA 
+```{r}
+# Cargar librerías
+library(magrittr)
+library(dplyr)
+
+
+# Definir columnas a excluir (puedes personalizar según tu archivo)
+dontselect <- c("PROVINCIA", "MCR", "POBR_MON")  # Excluye columnas categóricas o irrelevantes
+
+# Seleccionar columnas numéricas
+select <- setdiff(names(data), dontselect)
+theData <- data[, select]
+
+# Limpiar las columnas numéricas (si hay comas en lugar de puntos)
+theData <- theData %>%
+  mutate(across(everything(), ~ as.numeric(gsub(",", ".", .))))
+
+# Mostrar las primeras filas como tabla
+library(rmarkdown)
+head(theData, 10) %>%
+  rmarkdown::paged_table()
+```
+
+```{r}
+library(polycor)
+corMatrix=polycor::hetcor(theData)$correlations
+round(corMatrix,2)
+```
+
+```{r}
+library(psych)
+psych::KMO(corMatrix) 
+```
+
+```{r}
+cortest.bartlett(corMatrix,n=nrow(theData))$p.value>0.05
+```
+
+```{r}
+library(matrixcalc)
+
+is.singular.matrix(corMatrix)
+```
+
+```{r}
+fa.parallel(theData, fa = 'fa',correct = T,plot = F)
+```
+
+
+
+
+Column {data-width=500}
+-----------------------------------------------------------------------
+
+### CORRELACIONES
+
+```{r}
+library(ggcorrplot)
+
+ggcorrplot(corMatrix)
+```
+```{r}
+
+```
+
+-----------------------------------------------------------------------
+
+ANÁLISIS DE CONGLOMERADOS 
+========================================================================
+Column {data-width=500} {.tabset}
+-----------------------------------------------------------------------
+
+### Gráfico A
+
+```{r}
+# Seleccionar las variables relevantes
+variables <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON" )]
+
+# Estandarizar las variables (si las escalas son diferentes)
+variables_scaled <- scale(variables)
+
+# Visualizar la distribución de las variables con boxplots
+boxplot(variables_scaled, horizontal = FALSE, las = 2, cex.axis = 0.7)
+```
+
+### Gráfico B
+```{r}
+library(BBmisc)
+# Cargar librería
+library(scales)
+
+# Seleccionar y normalizar variables relevantes
+variables <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")]
+
+# Normalizar variables al rango 0-10
+variables_normalized <- as.data.frame(lapply(variables, rescale, to = c(0, 10)))
+
+# Visualizar la distribución con boxplot
+boxplot(variables_normalized, horizontal = FALSE, las = 2, cex.axis = 0.7,
+        main = "Distribución de Variables Normalizadas (Rango 0-10)")
+```
+
+
+
+
+
+
+Column {data-width=500} {.tabset}
+-----------------------------------------------------------------------
+
+### Normalización de variables
+
+```{r}
+# Normalizar o estandarizar las variables (opcional, dependiendo de los rangos)
+variables_scaled <- scale(variables)
+
+# Calcular la matriz de correlación
+cor_matrix <- cor(variables_scaled, use = "pairwise.complete.obs")
+
+# Mostrar la matriz de correlación
+print(cor_matrix)
+
+```
+
+### Gráfico C
+
+```{r}
+# Seleccionar variables relevantes
+dataClus <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")]
+
+# Escalar las variables
+dataClus <- scale(dataClus)
+
+# Establecer nombres de fila (opcional, si tienes identificadores únicos como provincias)
+row.names(dataClus) <- data$PROVINCIA
+```
+
+```{r}
+# Calcular matriz de distancias
+dist_matrix <- dist(dataClus, method = "euclidean")
+```
+
+```{r}
+# Librerías necesarias
+library(cluster)
+library(factoextra)
+
+# Escalar las variables seleccionadas
+variables <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Calcular el número óptimo de clusters con Gap Statistic
+fviz_nbclust(
+  variables,        # Variables escaladas
+  FUN = hcut,       # Función de clusterización jerárquica
+  method = "gap_stat",  # Método de evaluación
+  k.max = 10,       # Máximo número de clusters evaluados
+  verbose = FALSE   # Desactiva mensajes en consola
+)
+```
+
+### Tabla explicativa 
+```{r}
+library(factoextra)
+library(kableExtra)
+
+# Escalar las variables seleccionadas
+dataClus <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Realizar la clusterización jerárquica aglomerativa (AGNES) con linkage ward.D
+set.seed(123)
+res.agnes <- hcut(
+  dataClus,                # Datos escalados
+  k = 3,                   # Número de clusters deseados
+  hc_func = "agnes",       # Método aglomerativo
+  hc_method = "ward.D"     # Linkage ward
+)
+
+# Agregar los clusters al dataset original
+data$agnes_cluster <- res.agnes$cluster
+
+# Mostrar las primeras filas con los resultados
+head(data, 15) %>% 
+  kbl() %>% 
+  kable_styling(full_width = FALSE)
+```
+
+### Gráfico D
+```{r}
+fviz_silhouette(res.agnes,print.summary = F)
+```
+
+### Gráfico E
+```{r}
+
+# Escalar las variables seleccionadas
+dataClus <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Realizar la clusterización jerárquica aglomerativa (AGNES)
+set.seed(123)
+res.agnes <- hcut(
+  dataClus,                # Datos escalados
+  k = 3,                   # Número de clusters deseados
+  hc_func = "agnes",       # Método aglomerativo
+  hc_method = "ward.D"     # Linkage ward
+)
+
+# Visualizar el dendrograma en formato horizontal
+fviz_dend(
+  res.agnes,               # Objeto del resultado de hcut
+  cex = 0.7,               # Tamaño del texto en el dendrograma
+  horiz = TRUE,            # Dendrograma horizontal
+  main = "Dendrograma de Clusterización Jerárquica (AGNES)"
+)
+```
+
+-----------------------------------------------------------------------
+
+CONCLUSIONES 
+========================================================================
+
+### Análisis univariado
+El análisis univariado permite identificar aquello necesario para llevar acabo las demás regresiones. Podemos ver que el servicio a gas muestra una alta dispersión, con valores atípicos y significativos, algo que veremos que tiene relación después, ya que el acceso a servicio a gas es una de las variables más significativas dentro del estudio. 
+Por su parte, el acceso a servicios de agua, presenta una distribución que se dirige hacia la derecha, lo que nos indica una desigualdad dentro del acceso de la misma. 
+En adición, podemos observar valores atípicos dentro de la percepción del índice de corrupción, que podrían o no afectar otros análisis y constataremos después. 
+
+### Gauss
+
+En la regresión gaussiana podemos identificar que el acceso a servicio a gas tiene un efecto significativo dentro de la variable dependiente, teniendo un nivel de significancia alto. 
+Por su lado, el acceso a servicio de agua no presenta une efecto significativo, siendo poco relevante en el modelo. 
+
+Del mismo modo, podemos notar que la relación entre el acceso a servicio a gas y el percentaje con el que ganó Pedro Castillo es negativa, lo que sugiere que mientras existe un aumento en el acceso a servicio a gas, hay una disminución en el porcentaje con el que ganó PC. 
+Mientras que la relación que hay con el índice de corrupción es positiva, por lo que a mayor percepción de índice de corrupción existe un mayor porcentaje de votos por PC. 
+
+Podemos decir que el modelo resulta medianamente útil para entender porque se da el porcentaje de votos hacia Pedro Castillo. 
+
+### Análisis factorial
+
+Debido a que el índice de la prueba KMO es de 0,67 podemos decir que no existe una muy buena adecuación de las variables para el análisis, ya que existieron variables como el índice de corrupción que pueden ser perfectamente utilizadas, mientras que los centros médicos, al tener valores bajos, afectaron el análisis. 
+
+Seguido a esto, el número de factores óptimo, termina siendo 3. 
+
+En la matriz de correlación vemos que hay correlaciones moderadas y bajas, dando a entender que el modelo no es el mejor y puede ser mejorado. 
+
+El valor de la prueba de Barlett es alto, por lo que las correlaciones no son lo suficientemente fuertes y se limita la interpretación 
+
+### Análisis de conglomerados 
+
+El análisis de conglomerados pudo identificar tres grupos principales dentro de las provincias
+- El primero incluye provincias con altos niveles de pobreza monetaria, que terminan teniendo una dependencia más grande que otras al acceso de servicios gas, con un bajo acceso a servicio de agua. 
+- En el segundo podemos obsefvar que hay valores intermedios en las variables, por lo que existe una condición más equilibrada entre las provincias y la dependencia y acceso mismo a servicios básicos 
+- En el tercero podemos ver que se muestras regiones con bajos niveles de pobreza e índice de corrupción. 
+
+Así, es visuble la separación de los conglomerados, por lo que podemos diferencias las necesidades de cada grupo. 

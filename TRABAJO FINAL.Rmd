@@ -1,0 +1,600 @@
+---
+title: "Trabajo final"
+author: "Paula Chata"
+date: "2024-11-15"
+output: html_document
+---
+
+```{r}
+# Cargar librerías
+library(tidyverse)
+
+# Importar los datos
+data <- read.csv("DATA PROVINCIAS_CHATA - Data.csv", stringsAsFactors = FALSE)
+
+# Limpiar y transformar variables numéricas
+data <- data %>%
+  mutate(across(c(PORC_GAN, POR_POB_ELEC, SERV_GAS, SERV_AGUA, EDUC_PBL, CP_MED, IND_CORR),
+                ~ as.numeric(gsub(",", ".", .)))) # Reemplazar comas y convertir a numérico
+```
+
+```{r}
+# Verificar la estructura de los datos
+str(data)
+```
+```{r}
+data <- data %>%
+  mutate(across(c(PORC_GAN, POR_POB_ELEC, SERV_GAS, SERV_AGUA, EDUC_PBL, CP_MED, IND_CORR),
+                ~ as.numeric(gsub(",", ".", .)))) %>%  # Reemplazar comas y convertir a numérico
+  mutate(MCR = as.factor(MCR))  # Asegurar que la macroregión es categórica
+
+```
+
+```{r}
+colnames(data)
+```
+
+```{r}
+colnames(data)[colnames(data) == "PORC_GAN "] <- "PORC_GAN"
+
+```
+
+```{r}
+modelo1 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA, data = data)
+summary(modelo1)
+
+```
+
+```{r}
+reg1=lm(modelo1,data=data)
+summary(reg1)
+```
+```{r}
+library(modelsummary)
+model1=list('apropiacion (I)'=reg1)
+modelsummary(model1, title = "Regresion: modelo 1",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo2 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL , data = data)
+summary(modelo2)
+```
+
+```{r}
+reg2=lm(modelo2,data=data)
+summary(reg2)
+```
+```{r}
+model2=list('apropiacion (II)'=reg2)
+modelsummary(model2, title = "Regresion: modelo 2",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo3 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED , data = data)
+summary(modelo3)
+```
+
+```{r}
+reg3=lm(modelo3,data=data)
+summary(reg3)
+```
+
+```{r}
+model3=list('apropiacion (III)'=reg3)
+modelsummary(model3, title = "Regresion: modelo 3",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+modelo4 <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED + IND_CORR , data = data)
+summary(modelo4)
+```
+
+```{r}
+reg4=lm(modelo4,data=data)
+summary(reg4)
+```
+
+```{r}
+model4=list('apropiacion (IV)'=reg4)
+modelsummary(model4, title = "Regresion: modelo 4",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)' = reg4)
+modelsummary(models, title = "Resultados de todos los modelos",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)'=reg4)
+modelsummary(models, title = "Resultados de todos los modelos",statistic = "conf.int",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+library(ggplot2)
+library(sjPlot)
+
+
+plot_models(reg1,reg2,reg3, reg4, vline.color = "black",m.labels=c("Modelo 1","Modelo 2","Modelo 3", "Modelo 4"),dot.size = 1,line.size = 0.6)
+```
+
+```{r}
+modelo5_c <- lm(PORC_GAN ~ SERV_GAS + SERV_AGUA + EDUC_PBL + CP_MED + IND_CORR + POR_POB_ELEC + MCR, data = data)
+summary(modelo5_c)
+```
+
+```{r}
+reg5=lm(modelo5_c,data=data)
+summary(reg5)
+```
+
+```{r}
+model5_c=list('apropiacion (V)'=reg5)
+modelsummary(model5_c, title = "Regresion: modelo 5 Control",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)' = reg4,
+            'apropiacion (V)' = reg5)
+modelsummary(models, title = "Resultados de todos los modelos",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+models=list('apropiacion (I)'=reg1,
+            'apropiacion (II)'=reg2,
+            'apropiacion (III)'=reg3,
+            'apropiacion (IV)'=reg4,
+            'apropiacion (V)'=reg5)
+modelsummary(models, title = "Resultados de todos los modelos",statistic = "conf.int",
+             stars = TRUE,
+             output = "kableExtra")
+```
+
+```{r}
+library(ggplot2)
+library(sjPlot)
+
+
+plot_models(reg1,reg2,reg3, reg4, reg5, vline.color = "black",m.labels=c("Modelo 1","Modelo 2","Modelo 3", "Modelo 4", "Modelo 5 Control"),dot.size = 1,line.size = 0.6)
+```
+
+
+```{r}
+library(magrittr)
+library(knitr)
+tanova=anova(reg1,reg2,reg3, reg4, reg5)
+
+kable(tanova,
+      caption = "Comparación de modelos")%>%kableExtra::kable_styling(full_width = FALSE)
+```
+
+#Analisis factorial 
+
+```{r}
+names(data)
+```
+
+```{r}
+# Cargar librerías
+library(magrittr)
+library(dplyr)
+
+
+# Definir columnas a excluir (puedes personalizar según tu archivo)
+dontselect <- c("PROVINCIA", "MCR", "POBR_MON")  # Excluye columnas categóricas o irrelevantes
+
+# Seleccionar columnas numéricas
+select <- setdiff(names(data), dontselect)
+theData <- data[, select]
+
+# Limpiar las columnas numéricas (si hay comas en lugar de puntos)
+theData <- theData %>%
+  mutate(across(everything(), ~ as.numeric(gsub(",", ".", .))))
+
+# Mostrar las primeras filas como tabla
+library(rmarkdown)
+head(theData, 10) %>%
+  rmarkdown::paged_table()
+
+```
+```{r}
+library(polycor)
+```
+```{r}
+corMatrix=polycor::hetcor(theData)$correlations
+```
+
+```{r}
+round(corMatrix,2)
+```
+
+```{r}
+library(ggcorrplot)
+
+ggcorrplot(corMatrix)
+```
+```{r}
+library(psych)
+psych::KMO(corMatrix) 
+```
+
+```{r}
+cortest.bartlett(corMatrix,n=nrow(theData))$p.value>0.05
+```
+
+```{r}
+library(matrixcalc)
+
+is.singular.matrix(corMatrix)
+```
+```{r}
+fa.parallel(theData, fa = 'fa',correct = T,plot = F)
+```
+
+
+##SI BIEN ES CIERTO AQUI ME SALE 2 FACTORES, cada vez que lo corro en otro archivo, salen 3 por lo que no supe muy bien como cambiarlo en mi dashboard
+```{r}
+library(GPArotation)
+resfa <- fa(theData,
+            nfactors = 2,
+            cor = 'mixed',
+            rotate = "varimax", #oblimin?
+            fm="minres")
+print(resfa$loadings)
+```
+```{r}
+print(resfa$loadings,cutoff = 0.5)
+```
+```{r}
+fa.diagram(resfa,main = "Resultados")
+```
+```{r}
+sort(resfa$communality)
+```
+
+```{r}
+sort(resfa$complexity)
+```
+
+#TUCKER LEWIS 
+```{r}
+resfa$TLI
+```
+no es mayor
+
+#RMS CERCA A CERO
+```{r}
+resfa$rms
+```
+SI
+
+#RMSEA cerca a cero
+```{r}
+resfa$RMSEA
+```
+
+#BIC
+```{r}
+resfa$BIC
+```
+
+#indices
+```{r}
+as.data.frame(resfa$scores)%>%head()
+```
+
+```{r}
+library(psych)
+library(ggplot2)
+
+# Seleccionar las variables relevantes
+variables <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")]
+
+# Escalar las variables
+variables_scaled <- scale(variables)
+
+# Realizar el análisis factorial exploratorio (EFA) con 2 factores
+resfa <- fa(variables_scaled, nfactors = 2, rotate = "varimax", fm = "ml")
+
+# Asignar puntajes factoriales al dataset original
+data$Factor1 <- resfa$scores[,1]  # Puntajes del primer factor
+data$Factor2 <- resfa$scores[,2]  # Puntajes del segundo factor
+
+# Generar el gráfico comparando una variable original con el primer puntaje factorial
+ggplot(data = data, aes(x = SERV_GAS, y = Factor1)) +
+  geom_point() +
+  theme_minimal() +
+  labs(
+    x = "Servicio de Gas (original)",
+    y = "Puntaje Factorial 1 "
+  )
+
+```
+```{r}
+# normalizando
+library(BBmisc)
+```
+
+
+
+#Analisis de conglomerados 
+
+```{r}
+
+# Seleccionar las variables relevantes
+variables <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON" )]
+
+# Estandarizar las variables (si las escalas son diferentes)
+variables_scaled <- scale(variables)
+
+# Visualizar la distribución de las variables con boxplots
+boxplot(variables_scaled, horizontal = FALSE, las = 2, cex.axis = 0.7)
+
+```
+```{r}
+library(BBmisc)
+```
+```{r}
+
+# Cargar librería
+library(scales)
+
+# Seleccionar y normalizar variables relevantes
+variables <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")]
+
+# Normalizar variables al rango 0-10
+variables_normalized <- as.data.frame(lapply(variables, rescale, to = c(0, 10)))
+
+# Visualizar la distribución con boxplot
+boxplot(variables_normalized, horizontal = FALSE, las = 2, cex.axis = 0.7,
+        main = "Distribución de Variables Normalizadas (Rango 0-10)")
+
+```
+```{r}
+
+# Normalizar o estandarizar las variables (opcional, dependiendo de los rangos)
+variables_scaled <- scale(variables)
+
+# Calcular la matriz de correlación
+cor_matrix <- cor(variables_scaled, use = "pairwise.complete.obs")
+
+# Mostrar la matriz de correlación
+print(cor_matrix)
+
+```
+```{r}
+
+# Seleccionar variables relevantes
+dataClus <- data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")]
+
+# Escalar las variables
+dataClus <- scale(dataClus)
+
+# Establecer nombres de fila (opcional, si tienes identificadores únicos como provincias)
+row.names(dataClus) <- data$PROVINCIA
+
+```
+
+```{r}
+# Calcular matriz de distancias
+dist_matrix <- dist(dataClus, method = "euclidean")
+
+```
+
+```{r}
+# Librerías necesarias
+library(cluster)
+library(factoextra)
+
+# Escalar las variables seleccionadas
+variables <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Calcular el número óptimo de clusters con Gap Statistic
+fviz_nbclust(
+  variables,        # Variables escaladas
+  FUN = hcut,       # Función de clusterización jerárquica
+  method = "gap_stat",  # Método de evaluación
+  k.max = 10,       # Máximo número de clusters evaluados
+  verbose = FALSE   # Desactiva mensajes en consola
+)
+
+
+```
+
+```{r}
+library(factoextra)
+library(kableExtra)
+
+# Escalar las variables seleccionadas
+dataClus <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Realizar la clusterización jerárquica aglomerativa (AGNES) con linkage ward.D
+set.seed(123)
+res.agnes <- hcut(
+  dataClus,                # Datos escalados
+  k = 3,                   # Número de clusters deseados
+  hc_func = "agnes",       # Método aglomerativo
+  hc_method = "ward.D"     # Linkage ward
+)
+
+# Agregar los clusters al dataset original
+data$agnes_cluster <- res.agnes$cluster
+
+# Mostrar las primeras filas con los resultados
+head(data, 15) %>% 
+  kbl() %>% 
+  kable_styling(full_width = FALSE)
+
+```
+
+```{r}
+fviz_silhouette(res.agnes,print.summary = F)
+```
+
+```{r}
+
+
+# Escalar las variables seleccionadas
+dataClus <- scale(data[, c("SERV_GAS", "SERV_AGUA", "IND_CORR", "POBR_MON")])
+
+# Realizar la clusterización jerárquica aglomerativa (AGNES)
+set.seed(123)
+res.agnes <- hcut(
+  dataClus,                # Datos escalados
+  k = 3,                   # Número de clusters deseados
+  hc_func = "agnes",       # Método aglomerativo
+  hc_method = "ward.D"     # Linkage ward
+)
+
+# Visualizar el dendrograma en formato horizontal
+fviz_dend(
+  res.agnes,               # Objeto del resultado de hcut
+  cex = 0.7,               # Tamaño del texto en el dendrograma
+  horiz = TRUE,            # Dendrograma horizontal
+  main = "Dendrograma de Clusterización Jerárquica (AGNES)"
+)
+
+```
+
+
+```{r}
+# Crear un data frame con la información de las siluetas
+silAGNES <- data.frame(res.agnes$silinfo$widths)
+
+# Agregar las etiquetas de las filas (observaciones, por ejemplo, provincias)
+silAGNES$observation <- row.names(silAGNES)
+
+# Identificar las observaciones con un ancho de silueta negativo
+poorAGNES <- silAGNES[silAGNES$sil_width < 0, 'observation'] %>% sort()
+
+# Mostrar las observaciones con valores de silueta negativos
+poorAGNES
+
+```
+
+
+
+
+#ANALISIS UNIVARIADO
+```{r}
+table(data$MCR)
+```
+
+```{r}
+median(data$PORC_GAN,na.rm=T)
+median(data$POR_POB_ELEC,na.rm=T)
+median(data$SERV_GAS,na.rm=T)
+median(data$SERV_AGUA,na.rm=T)
+median(data$EDUC_PBL,na.rm=T)
+median(data$CP_MED,na.rm=T)
+median(data$IND_CORR,na.rm=T)
+
+```
+```{r}
+mean(data$PORC_GAN,na.rm=T)
+```
+
+```{r}
+data %>%                      ## Paso 1: DATA 
+  summarize(Promedio=mean(PORC_GAN),Mediana=median(PORC_GAN))  ## Paso 2: Resumir 
+
+```
+
+```{r}
+data %>%                      ## Paso 1: DATA 
+  group_by(MCR) %>%    ## Paso 2: group_by
+  summarize(Promedio=mean(PORC_GAN),Mediana=median(PORC_GAN)) ## Paso 2:summarize
+```
+
+HISTOGRAMA
+```{r}
+library(ggplot2)
+```
+```{r}
+ggplot(data, aes(x=PORC_GAN)) + geom_histogram()
+```
+```{r}
+ggplot(data = data, aes(x = MCR)) +
+  geom_bar(fill = 'red')
+```
+```{r}
+sd(data$PORC_GAN)
+var(data$PORC_GAN)
+```
+
+```{r}
+max(data$PORC_GAN)
+min(data$PORC_GAN)
+range(data$PORC_GAN)
+```
+
+```{r}
+quantile(data$PORC_GAN)
+```
+
+```{r}
+IQR(data$PORC_GAN)
+```
+
+```{r}
+ggplot(data, aes(y = PORC_GAN )) + 
+  stat_boxplot(geom = "errorbar", # Error bars
+               width = 0.25) +    # Bars width
+  geom_boxplot()
+```
+
+```{r}
+library(ggplot2)
+ggplot(data, aes(x=MCR,y = PORC_GAN)) + 
+  geom_boxplot()
+```
+```{r}
+library(ggplot2)
+ggplot(data, aes(x=MCR,y = PORC_GAN,fill=MCR)) + 
+  geom_boxplot()
+```
+```{r}
+ggplot(data.frame(data), aes(x = PORC_GAN)) +
+       geom_histogram(aes(y = ..density..),
+                      color = "gray", fill = "white") +
+       geom_density(fill = "black", alpha = 0.2)
+```
+```{r}
+ggplot(data, aes(x = PORC_GAN, fill = MCR , colour = MCR)) + 
+  geom_histogram(alpha = 0.5, position = "identity") + 
+  theme(legend.position = "left") # Izquierda
+```
+
+```{r}
+library(dplyr)
+data %>%
+  ggplot(aes(x = PORC_GAN, group = MCR)) +
+  geom_histogram() +
+  facet_wrap(~ MCR) +
+  labs(x = "Macroregiones", y = "porcentaje en que gano PEDRO CASTILLO")
+```
+
